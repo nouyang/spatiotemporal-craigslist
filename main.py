@@ -25,7 +25,7 @@ for single_date in daterange(start_date, end_date):
     fp = "https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_daily_reports/{}.csv".format(
         single_date.strftime("%m-%d-%Y")
     )
-    df = df.append(pd.read_csv(fp))
+    df = df.append(pd.read_csv(fp).rename(columns={"Province_State":"Province/State","Country_Region":"Country/Region","Last_Update":"Last Update","Lat":"Latitude","Long_":"Longitude"}))
 
 # We need to map in the coordintes for some of the first dates
 df["Province/State"] = df["Province/State"].fillna("N/A")
@@ -85,9 +85,10 @@ df_acc["Longitude"] = df_acc["Longitude"].astype(float)
 heat_df = df_acc[["Latitude", "Longitude", "Last Update","Confirmed","Deaths","Recovered"]].copy()
 
 # Enforce float
-heat_df["Confirmed"] = heat_df["Confirmed"].astype(float)
-heat_df["Deaths"] = heat_df["Deaths"].astype(float)
-heat_df["Recovered"] = heat_df["Recovered"].astype(float)
+heat_df["Confirmed"] = heat_df["Confirmed"].astype(float).fillna(0)
+heat_df["Deaths"] = heat_df["Deaths"].astype(float).fillna(0)
+heat_df["Recovered"] = heat_df["Recovered"].astype(float).fillna(0)
+heat_df["CurrentlyInfected"] = heat_df["Confirmed"]-heat_df["Recovered"]
 
 heat_df = heat_df.dropna(axis=0, subset=["Latitude", "Longitude", "Confirmed"])
 heat_df = heat_df.sort_values("Last Update")
@@ -100,7 +101,7 @@ heat_df["local_growth"] = heat_df.groupby(
 heat_df["local_growth"] = heat_df["local_growth"].clip(0).fillna(0)
 
 # for visualizing it assymtotically - scaling so that china won't overshadow everything else
-limit_value = heat_df["Confirmed"].max()
+limit_value = heat_df["CurrentlyInfected"].max()
 alpha = 1000
 
 # List comprehension to make out list of lists
@@ -110,8 +111,8 @@ confirmed_data = [
             row["Latitude"],
             row["Longitude"],
             alpha
-            * np.log(1 + row["Confirmed"] / limit_value)
-            / (1 + alpha * np.log(1 + row["Confirmed"] / limit_value)),
+            * np.log(1 + row["CurrentlyInfected"] / limit_value)
+            / (1 + alpha * np.log(1 + row["CurrentlyInfected"] / limit_value)),
         ]
         for index, row in heat_df[heat_df["Last Update"] == i].iterrows()
     ]
@@ -122,7 +123,7 @@ confirmed_data = [
 hm = plugins.HeatMapWithTime(
     confirmed_data,
     index=list(heat_df["Last Update"].unique()),
-    name="Confirmed cases",
+    name="Current cases",
     auto_play=True,
     max_opacity=0.8,
 )
@@ -132,5 +133,5 @@ ctrl = folium.LayerControl()
 ctrl.add_to(map_hooray)
 
 # Display the map
-map_hooray.save("test.html")
+map_hooray.save("main.html")
 
