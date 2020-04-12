@@ -10,8 +10,6 @@ from folium import plugins
 from datetime import timedelta, date
 import numpy as np
 
-map_hooray = folium.Map(zoom_start=12)
-
 
 def daterange(start_date, end_date):
     for n in range(int((end_date - start_date).days)):
@@ -101,7 +99,7 @@ heat_df["local_growth"] = heat_df.groupby(
 heat_df["local_growth"] = heat_df["local_growth"].clip(0).fillna(0)
 
 # for visualizing it assymtotically - scaling so that china won't overshadow everything else
-limit_value = heat_df["CurrentlyInfected"].max()
+limit_value = heat_df["Confirmed"].max()
 alpha = 1000
 
 # List comprehension to make out list of lists
@@ -111,8 +109,8 @@ confirmed_data = [
             row["Latitude"],
             row["Longitude"],
             alpha
-            * np.log(1 + row["CurrentlyInfected"] / limit_value)
-            / (1 + alpha * np.log(1 + row["CurrentlyInfected"] / limit_value)),
+            * np.log(1 + row["Confirmed"] / limit_value)
+            / (1 + alpha * np.log(1 + row["Confirmed"] / limit_value)),
         ]
         for index, row in heat_df[heat_df["Last Update"] == i].iterrows()
     ]
@@ -120,6 +118,8 @@ confirmed_data = [
 ]
 
 # Plot it on the map
+map_hmw = folium.Map(zoom_start=12)
+
 hm = plugins.HeatMapWithTime(
     confirmed_data,
     index=list(heat_df["Last Update"].unique()),
@@ -127,11 +127,11 @@ hm = plugins.HeatMapWithTime(
     auto_play=True,
     max_opacity=0.8,
 )
-hm.add_to(map_hooray)
+hm.add_to(map_hmw)
 
 ctrl = folium.LayerControl()
-ctrl.add_to(map_hooray)
+ctrl.add_to(map_hmw)
 
 # Display the map
-map_hooray.save("main.html")
+map_hmw.save("main.html")
 
