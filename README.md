@@ -1,5 +1,8 @@
-# corona-analysis
-Some sample files analyzing and visualizing data from the corona outbreak
+# spatiotemporal craigslist 
+
+
+Visualizaing spatio temporal data; 
+based on example for corona data (ludokriss/corona-analysis)
 
 ## How to use
 
